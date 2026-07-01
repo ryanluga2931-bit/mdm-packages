@@ -73,6 +73,18 @@ if ($threemaInstalled) {
     }
 }
 
+# --- [4] Telegram ---
+Write-Host ""
+Write-Host "=== [4/4] Telegram ===" -ForegroundColor Cyan
+$tgExe = "$env:APPDATA\Telegram Desktop\Telegram.exe"
+if (Test-Path $tgExe) {
+    Write-Host "  [SKIP] Telegram da cai" -ForegroundColor Cyan
+} else {
+    $tg = "$tmp\TelegramSetup.exe"
+    Download "Telegram 6.9.3" "https://github.com/telegramdesktop/tdesktop/releases/download/v6.9.3/tsetup-x64.6.9.3.exe" $tg
+    RunInstaller "Telegram" $tg "/VERYSILENT /NORESTART"
+}
+
 # --- Ket qua ---
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
@@ -80,5 +92,6 @@ Write-Host " HOAN TAT - O Clay VPS" -ForegroundColor Green
 Write-Host "  1. VipTalk 1.12.142" -ForegroundColor White
 Write-Host "  2. Signal 8.16.0" -ForegroundColor White
 Write-Host "  3. Threema 2.0-beta62" -ForegroundColor White
+Write-Host "  4. Telegram 6.9.3" -ForegroundColor White
 Write-Host "========================================" -ForegroundColor Cyan
 pause
