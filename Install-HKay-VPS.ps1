@@ -77,7 +77,8 @@ Write-Host ""
 Write-Host "=== [6/7] NodeJS LTS ===" -ForegroundColor Cyan
 $node = "$tmp\NodeSetup.msi"
 # Lay version LTS moi nhat
-$nodeVer = (Invoke-WebRequest "https://nodejs.org/dist/index.json" -UseBasicParsing | ConvertFrom-Json | Where-Object { $_.lts } | Select-Object -First 1).version
+$nodeJson = (Invoke-WebRequest "https://nodejs.org/dist/index.json" -UseBasicParsing).Content | ConvertFrom-Json
+$nodeVer = ($nodeJson | Where-Object { $_.lts -ne $false } | Select-Object -First 1).version
 Download "NodeJS $nodeVer" "https://nodejs.org/dist/$nodeVer/node-$nodeVer-x64.msi" $node
 Run "NodeJS" "msiexec.exe" "/i `"$node`" /qn /norestart"
 
