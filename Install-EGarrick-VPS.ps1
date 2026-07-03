@@ -35,6 +35,25 @@ function CheckReg($name) {
         -EA SilentlyContinue | Where-Object { $_.DisplayName -like "*$name*" }
 }
 
+function AddShortcut($name, $targetPath, $args = "") {
+    $desktopPaths = @("$env:PUBLIC\Desktop", "$env:USERPROFILE\Desktop")
+    foreach ($desktop in $desktopPaths) {
+        $lnk = "$desktop\$name.lnk"
+        if (-not (Test-Path $lnk)) {
+            if (Test-Path $targetPath) {
+                $shell = New-Object -ComObject WScript.Shell
+                $sc = $shell.CreateShortcut($lnk)
+                $sc.TargetPath = $targetPath
+                if ($args) { $sc.Arguments = $args }
+                $sc.Save()
+                Write-Host "  [OK] Shortcut '$name' tao tren $desktop" -ForegroundColor Green
+            }
+        } else {
+            Write-Host "  [SKIP] Shortcut '$name' da co" -ForegroundColor Cyan
+        }
+    }
+}
+
 # --- [1] UniKey ---
 Write-Host ""
 Write-Host "=== [1/8] UniKey ===" -ForegroundColor Cyan
@@ -45,11 +64,9 @@ if (Test-Path $ukExe) {
     $f = "$tmp\UniKey.zip"
     Download "UniKey" "$ghBase/UniKey-Windows.zip" $f
     Expand-Archive $f -DestinationPath "C:\Program Files\UniKey" -Force
-    $shell = New-Object -ComObject WScript.Shell
-    $sc = $shell.CreateShortcut("$env:PUBLIC\Desktop\UniKey.lnk")
-    $sc.TargetPath = $ukExe; $sc.Save()
     Write-Host "  [OK] UniKey xong" -ForegroundColor Green
 }
+AddShortcut "UniKey" $ukExe
 
 # --- [2] VipTalk ---
 Write-Host ""
@@ -61,6 +78,8 @@ if (CheckReg "VipTalk") {
     Download "VipTalk 1.12.142" "$ghBase/VipTalk-Setup-1.12.142.exe" $f
     RunInstaller "VipTalk" $f "/S"
 }
+$vtExe = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*","HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -EA SilentlyContinue | Where-Object { $_.DisplayName -like "*VipTalk*" } | Select-Object -First 1).InstallLocation
+if ($vtExe) { AddShortcut "VipTalk" "$vtExe\VipTalk.exe" }
 
 # --- [3] Signal ---
 Write-Host ""
@@ -73,6 +92,7 @@ if (Test-Path $sigExe) {
     Download "Signal 8.16.0" "$ghBase/Signal-8.16.0-x64.exe" $f
     RunInstaller "Signal" $f "--silent"
 }
+AddShortcut "Signal" "$env:LOCALAPPDATA\Programs\signal-desktop\Signal.exe"
 
 # --- [4] VS Code ---
 Write-Host ""
@@ -85,6 +105,7 @@ if (Test-Path $codeExe) {
     Download "VS Code" "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" $f
     RunInstaller "VS Code" $f "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
 }
+AddShortcut "Visual Studio Code" "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe"
 
 # --- [5] Postman ---
 Write-Host ""
@@ -97,6 +118,7 @@ if (Test-Path $postmanExe) {
     Download "Postman" "https://dl.pstmn.io/download/latest/win64" $f
     RunInstaller "Postman" $f "--silent"
 }
+AddShortcut "Postman" "$env:LOCALAPPDATA\Postman\Postman.exe"
 
 # --- [6] DBeaver ---
 Write-Host ""
@@ -108,6 +130,8 @@ if (CheckReg "DBeaver") {
     Download "DBeaver 26.1.1" "https://github.com/dbeaver/dbeaver/releases/download/26.1.1/dbeaver-ce-26.1.1-windows-x86_64.exe" $f
     RunInstaller "DBeaver" $f "/S"
 }
+$dbeaverExe = "C:\Program Files\DBeaver\dbeaver.exe"
+AddShortcut "DBeaver" $dbeaverExe
 
 # --- [7] MySQL Workbench ---
 Write-Host ""
@@ -119,6 +143,8 @@ if (CheckReg "MySQL Workbench") {
     Download "MySQL Workbench 8.0.47" "https://cdn.mysql.com/Downloads/MySQLGUITools/mysql-workbench-community-8.0.47-winx64.msi" $f
     RunInstaller "MySQL Workbench" "msiexec.exe" "/i `"$f`" /qn /norestart"
 }
+$wbExe = "C:\Program Files\MySQL\MySQL Workbench 8.0\MySQLWorkbench.exe"
+AddShortcut "MySQL Workbench" $wbExe
 
 # --- [8] WSL2 + Docker Desktop ---
 Write-Host ""
@@ -163,6 +189,7 @@ if (CheckReg "Docker Desktop") {
     Download "Docker Desktop" "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe" $f
     RunInstaller "Docker Desktop" $f "install --quiet --accept-license"
 
+    AddShortcut "Docker Desktop" "$env:LOCALAPPDATA\Docker\Docker Desktop.exe"
     Write-Host ""
     Write-Host "  [!] Restart may sau khi cai xong de WSL2 + Docker hoat dong!" -ForegroundColor Yellow
 }
