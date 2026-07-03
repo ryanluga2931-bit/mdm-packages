@@ -35,23 +35,23 @@ function CheckReg($name) {
         -EA SilentlyContinue | Where-Object { $_.DisplayName -like "*$name*" }
 }
 
-function AddShortcut($name, $targetPath, $args = "") {
-    $desktopPaths = @("$env:PUBLIC\Desktop", "$env:USERPROFILE\Desktop")
-    foreach ($desktop in $desktopPaths) {
-        $lnk = "$desktop\$name.lnk"
-        if (-not (Test-Path $lnk)) {
-            if (Test-Path $targetPath) {
-                $shell = New-Object -ComObject WScript.Shell
-                $sc = $shell.CreateShortcut($lnk)
-                $sc.TargetPath = $targetPath
-                if ($args) { $sc.Arguments = $args }
-                $sc.Save()
-                Write-Host "  [OK] Shortcut '$name' tao tren $desktop" -ForegroundColor Green
-            }
-        } else {
-            Write-Host "  [SKIP] Shortcut '$name' da co" -ForegroundColor Cyan
-        }
+function AddShortcut($name, $targetPath, $argList = "") {
+    $publicLnk  = "$env:PUBLIC\Desktop\$name.lnk"
+    $userLnk    = "$env:USERPROFILE\Desktop\$name.lnk"
+    if ((Test-Path $publicLnk) -or (Test-Path $userLnk)) {
+        Write-Host "  [SKIP] Shortcut '$name' da co" -ForegroundColor Cyan
+        return
     }
+    if (-not (Test-Path $targetPath)) {
+        Write-Host "  [SKIP] Shortcut '$name': khong tim thay exe" -ForegroundColor Gray
+        return
+    }
+    $shell = New-Object -ComObject WScript.Shell
+    $sc = $shell.CreateShortcut($publicLnk)
+    $sc.TargetPath = $targetPath
+    if ($argList) { $sc.Arguments = $argList }
+    $sc.Save()
+    Write-Host "  [OK] Shortcut '$name' tao xong" -ForegroundColor Green
 }
 
 # --- [1] UniKey ---
