@@ -123,14 +123,15 @@ AddShortcut "Postman" "$env:LOCALAPPDATA\Postman\Postman.exe"
 # --- [6] DBeaver ---
 Write-Host ""
 Write-Host "=== [6/8] DBeaver ===" -ForegroundColor Cyan
-if (CheckReg "DBeaver") {
-    Write-Host "  [SKIP] DBeaver da cai" -ForegroundColor Cyan
+$dbeaverExe = "C:\DBeaver\dbeaver.exe"
+if (Test-Path $dbeaverExe) {
+    Write-Host "  [SKIP] DBeaver da co" -ForegroundColor Cyan
 } else {
-    $f = "$tmp\DBeaver.exe"
-    Download "DBeaver 26.1.1" "https://github.com/dbeaver/dbeaver/releases/download/26.1.1/dbeaver-ce-26.1.1-windows-x86_64.exe" $f
-    RunInstaller "DBeaver" $f "/S"
+    $f = "$tmp\DBeaver.zip"
+    Download "DBeaver 26.1.1 (portable)" "https://github.com/dbeaver/dbeaver/releases/download/26.1.1/dbeaver-ce-26.1.1-windows-x86_64.zip" $f
+    Expand-Archive $f -DestinationPath "C:\" -Force
+    Write-Host "  [OK] DBeaver giai nen vao C:\DBeaver" -ForegroundColor Green
 }
-$dbeaverExe = "C:\Program Files\DBeaver\dbeaver.exe"
 AddShortcut "DBeaver" $dbeaverExe
 
 # --- [7] MySQL Workbench ---
