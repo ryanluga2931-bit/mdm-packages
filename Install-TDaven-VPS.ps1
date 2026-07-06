@@ -79,6 +79,50 @@ function AddShortcut($name, $targetPath, $argList = "") {
     Write-Host "  [OK] Shortcut '$name' tao xong" -ForegroundColor Green
 }
 
+# --- [0] Prerequisites ---
+Write-Host ""
+Write-Host "=== [0] Prerequisites (VC++, .NET 8, WebView2) ===" -ForegroundColor Cyan
+
+# Visual C++ Redistributable 2022
+$vcInstalled = Get-ItemProperty `
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" `
+    -EA SilentlyContinue | Where-Object {
+        $_.DisplayName -like "*Visual C++*" -and $_.DisplayVersion -ge "14.30"
+    } | Select-Object -First 1
+if ($vcInstalled) {
+    Write-Host "  [SKIP] VC++ Redistributable da cai: $($vcInstalled.DisplayVersion)" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\vc_redist.exe"
+    if (Download "VC++ Redistributable 2022" "https://aka.ms/vs/17/release/vc_redist.x64.exe" $f) {
+        RunInstaller "VC++ Redistributable" $f "/install /quiet /norestart"
+    }
+}
+
+# .NET 8 Desktop Runtime
+$dotnet8Path = Get-Item "C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\8.*" -EA SilentlyContinue | Select-Object -Last 1
+if ($dotnet8Path) {
+    Write-Host "  [SKIP] .NET 8 Desktop Runtime da cai: $($dotnet8Path.Name)" -ForegroundColor Cyan
+} else {
+    $dotnetVer = (Invoke-WebRequest "https://dotnetcli.azureedge.net/dotnet/WindowsDesktop/8.0/latest.version" -UseBasicParsing).Content.Trim()
+    $dotnetUrl = "https://dotnetcli.azureedge.net/dotnet/WindowsDesktop/$dotnetVer/windowsdesktop-runtime-$dotnetVer-win-x64.exe"
+    $f = "$tmp\dotnet8-runtime.exe"
+    if (Download ".NET 8 Desktop Runtime $dotnetVer" $dotnetUrl $f) {
+        RunInstaller ".NET 8 Runtime" $f "/install /quiet /norestart"
+    }
+}
+
+# WebView2 Runtime
+$wv2 = Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -EA SilentlyContinue
+if ($wv2 -and $wv2.pv -ne "0.0.0.0") {
+    Write-Host "  [SKIP] WebView2 Runtime da cai: $($wv2.pv)" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\webview2.exe"
+    if (Download "WebView2 Runtime" "https://go.microsoft.com/fwlink/p/?LinkId=2124703" $f) {
+        RunInstaller "WebView2" $f "/silent /install"
+    }
+}
+
 # --- [1] UniKey ---
 Write-Host ""
 Write-Host "=== [1/9] UniKey ===" -ForegroundColor Cyan
