@@ -7,6 +7,13 @@
 # NOTE: Safari + Maccy = macOS only, khong co tren Windows
 # ============================================================
 
+# Auto self-elevate neu chua phai admin
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "Dang tu nang cap quyen Admin..." -ForegroundColor Yellow
+    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
 $ErrorActionPreference = "Continue"
 $ghBase = "https://github.com/ryanluga2931-bit/mdm-packages/releases/download/v1.0"
 $tmp = "$env:TEMP\PtizInstall"
@@ -360,11 +367,6 @@ Write-Host "=== [12] Arc Browser ===" -ForegroundColor Cyan
 $arcExe = "$env:LOCALAPPDATA\Arc\Arc.exe"
 if (Test-Path $arcExe) {
     Write-Host "  [SKIP] Arc da cai" -ForegroundColor Cyan
-} elseif (Get-Command winget -EA SilentlyContinue) {
-    Write-Host "  [.] Cai Arc qua winget..." -ForegroundColor Yellow
-    winget install --id TheBrowserCompany.Arc --silent --accept-package-agreements --accept-source-agreements
-    if ($LASTEXITCODE -eq 0) { Write-Host "  [OK] Arc cai xong" -ForegroundColor Green }
-    else { Write-Host "  [WARN] winget exit: $LASTEXITCODE" -ForegroundColor Yellow }
 } else {
     $f = "$tmp\ArcSetup.exe"
     if (Download "Arc Browser" "https://releases.arc.net/windows/Arc%20Installer.exe" $f) {
