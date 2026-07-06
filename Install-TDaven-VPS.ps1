@@ -237,11 +237,13 @@ $vtReg = Get-ItemProperty `
     "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" `
     -EA SilentlyContinue | Where-Object { $_.DisplayName -like "*VipTalk*" } | Select-Object -First 1
 $vtExePaths = @(
-    ($vtReg.InstallLocation -ne $null ? (Join-Path $vtReg.InstallLocation "VipTalk.exe") : $null),
     "C:\Program Files\VipTalk\VipTalk.exe",
     "C:\Program Files (x86)\VipTalk\VipTalk.exe",
     "$env:LOCALAPPDATA\Programs\VipTalk\VipTalk.exe"
-) | Where-Object { $_ -ne $null }
+)
+if ($vtReg -and $vtReg.InstallLocation) {
+    $vtExePaths = @(Join-Path $vtReg.InstallLocation "VipTalk.exe") + $vtExePaths
+}
 $vtExe = $vtExePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $vtExe) { $vtExe = "C:\Program Files\VipTalk\VipTalk.exe" }
 $appResults["VipTalk"] = LaunchCheck "VipTalk" $vtExe
