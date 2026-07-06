@@ -17,9 +17,13 @@ function Download($name, $url, $out) {
     for ($i = 1; $i -le 3; $i++) {
         try {
             Remove-Item $out -EA SilentlyContinue
-            $wc = New-Object System.Net.WebClient
-            $wc.DownloadFile($url, $out)
-            $wc.Dispose()
+            $curlExe = "$env:SystemRoot\System32\curl.exe"
+            if (Test-Path $curlExe) {
+                & $curlExe -L -s -o $out $url
+            } else {
+                $ProgressPreference = 'SilentlyContinue'
+                Invoke-WebRequest $url -OutFile $out -UseBasicParsing -EA Stop
+            }
             if ((Test-Path $out) -and (Get-Item $out).Length -gt 100KB) {
                 Write-Host "  [OK] Tai xong ($([math]::Round((Get-Item $out).Length/1MB,1)) MB)" -ForegroundColor Green
                 return $true
