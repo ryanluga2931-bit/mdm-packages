@@ -1,7 +1,10 @@
 # ============================================================
 # Cai app cho VPS Ptiz
-# UniKey, VipTalk 1.12.143, Signal, VS Code, Cursor,
-# GitHub Desktop, Postman, Android Studio, WSL2+Docker
+# UniKey, VipTalk, Signal, VS Code, Cursor,
+# GitHub Desktop, Postman, Android Studio, WSL2+Docker,
+# Chrome, Firefox, Arc, Chocolatey, Scoop,
+# Tabby (Terminus), Figma, DBeaver, Effect House
+# NOTE: Safari + Maccy = macOS only, khong co tren Windows
 # ============================================================
 
 $ErrorActionPreference = "Continue"
@@ -324,6 +327,184 @@ if (-not $featuresOn) {
 }
 
 # ============================================================
+# [10] Google Chrome
+# ============================================================
+Write-Host ""
+Write-Host "=== [10] Google Chrome ===" -ForegroundColor Cyan
+$chromeExe = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+if (Test-Path $chromeExe) {
+    Write-Host "  [SKIP] Chrome da cai" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\ChromeSetup.exe"
+    if (Download "Google Chrome" "https://dl.google.com/chrome/install/latest/chrome_installer.exe" $f) {
+        RunInstaller "Chrome" $f "/silent /install"
+    }
+}
+AddShortcut "Google Chrome" $chromeExe
+
+# ============================================================
+# [11] Firefox
+# ============================================================
+Write-Host ""
+Write-Host "=== [11] Firefox ===" -ForegroundColor Cyan
+$ffExe = "C:\Program Files\Mozilla Firefox\firefox.exe"
+if (Test-Path $ffExe) {
+    Write-Host "  [SKIP] Firefox da cai" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\FirefoxSetup.exe"
+    if (Download "Firefox" "https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=en-US" $f) {
+        RunInstaller "Firefox" $f "-ms /S"
+    }
+}
+AddShortcut "Firefox" $ffExe
+
+# ============================================================
+# [12] Arc Browser
+# ============================================================
+Write-Host ""
+Write-Host "=== [12] Arc Browser ===" -ForegroundColor Cyan
+$arcExe = "$env:LOCALAPPDATA\Arc\Arc.exe"
+if (Test-Path $arcExe) {
+    Write-Host "  [SKIP] Arc da cai" -ForegroundColor Cyan
+} elseif (Get-Command winget -EA SilentlyContinue) {
+    Write-Host "  [.] Cai Arc qua winget..." -ForegroundColor Yellow
+    winget install --id TheBrowserCompany.Arc --silent --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -eq 0) { Write-Host "  [OK] Arc cai xong" -ForegroundColor Green }
+    else { Write-Host "  [WARN] winget exit: $LASTEXITCODE" -ForegroundColor Yellow }
+} else {
+    $f = "$tmp\ArcSetup.exe"
+    if (Download "Arc Browser" "https://releases.arc.net/windows/Arc%20Installer.exe" $f) {
+        RunInstaller "Arc" $f "--silent"
+    }
+}
+
+# ============================================================
+# [13] Chocolatey
+# ============================================================
+Write-Host ""
+Write-Host "=== [13] Chocolatey ===" -ForegroundColor Cyan
+if (Get-Command choco -EA SilentlyContinue) {
+    Write-Host "  [SKIP] Chocolatey da cai: $(choco --version)" -ForegroundColor Cyan
+} else {
+    Write-Host "  [.] Cai Chocolatey..." -ForegroundColor Yellow
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    if (Get-Command choco -EA SilentlyContinue) {
+        Write-Host "  [OK] Chocolatey $(choco --version)" -ForegroundColor Green
+    } else {
+        Write-Host "  [WARN] Chocolatey cai xong nhung can mo PowerShell moi de dung" -ForegroundColor Yellow
+    }
+}
+
+# ============================================================
+# [14] Scoop
+# ============================================================
+Write-Host ""
+Write-Host "=== [14] Scoop ===" -ForegroundColor Cyan
+if (Get-Command scoop -EA SilentlyContinue) {
+    Write-Host "  [SKIP] Scoop da cai" -ForegroundColor Cyan
+} else {
+    Write-Host "  [.] Cai Scoop..." -ForegroundColor Yellow
+    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    Invoke-RestMethod get.scoop.sh | Invoke-Expression
+    if (Get-Command scoop -EA SilentlyContinue) {
+        Write-Host "  [OK] Scoop cai xong" -ForegroundColor Green
+    } else {
+        Write-Host "  [WARN] Scoop cai xong nhung can mo PowerShell moi de dung" -ForegroundColor Yellow
+    }
+}
+
+# ============================================================
+# [15] Tabby (Terminus terminal)
+# ============================================================
+Write-Host ""
+Write-Host "=== [15] Tabby (Terminus) ===" -ForegroundColor Cyan
+$tabbyInstalled = CheckReg "Tabby"
+if ($tabbyInstalled) {
+    Write-Host "  [SKIP] Tabby da cai" -ForegroundColor Cyan
+} elseif (Get-Command winget -EA SilentlyContinue) {
+    Write-Host "  [.] Cai Tabby qua winget..." -ForegroundColor Yellow
+    winget install --id Eugeny.Tabby --silent --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -eq 0) { Write-Host "  [OK] Tabby cai xong" -ForegroundColor Green }
+    else { Write-Host "  [WARN] winget exit: $LASTEXITCODE" -ForegroundColor Yellow }
+} else {
+    try {
+        $tabbyRel = Invoke-RestMethod "https://api.github.com/repos/Eugeny/tabby/releases/latest" -UseBasicParsing
+        $tabbyUrl = ($tabbyRel.assets | Where-Object { $_.name -like "*setup*x64*.exe" } | Select-Object -First 1).browser_download_url
+        $f = "$tmp\TabbySetup.exe"
+        if ($tabbyUrl -and (Download "Tabby" $tabbyUrl $f)) {
+            RunInstaller "Tabby" $f "/S"
+        }
+    } catch {
+        Write-Host "  [WARN] Khong lay duoc URL Tabby: $_" -ForegroundColor Yellow
+    }
+}
+
+# ============================================================
+# [16] Figma
+# ============================================================
+Write-Host ""
+Write-Host "=== [16] Figma ===" -ForegroundColor Cyan
+$figmaInstalled = CheckReg "Figma"
+if ($figmaInstalled) {
+    Write-Host "  [SKIP] Figma da cai" -ForegroundColor Cyan
+} elseif (Get-Command winget -EA SilentlyContinue) {
+    Write-Host "  [.] Cai Figma qua winget..." -ForegroundColor Yellow
+    winget install --id Figma.Figma --silent --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -eq 0) { Write-Host "  [OK] Figma cai xong" -ForegroundColor Green }
+    else { Write-Host "  [WARN] winget exit: $LASTEXITCODE" -ForegroundColor Yellow }
+} else {
+    $f = "$tmp\FigmaSetup.exe"
+    if (Download "Figma" "https://desktop.figma.com/win/FigmaSetup.exe" $f) {
+        RunInstaller "Figma" $f "/S"
+    }
+}
+
+# ============================================================
+# [17] DBeaver (portable zip - tranh loi exit 666660)
+# ============================================================
+Write-Host ""
+Write-Host "=== [17] DBeaver ===" -ForegroundColor Cyan
+$dbeaverExe = "C:\DBeaver\dbeaver.exe"
+if (Test-Path $dbeaverExe) {
+    Write-Host "  [SKIP] DBeaver da co" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\DBeaver.zip"
+    if (Download "DBeaver CE" "https://dbeaver.io/files/dbeaver-ce-latest-win32.win32.x86_64.zip" $f) {
+        Expand-Archive $f -DestinationPath "C:\" -Force
+        Write-Host "  [OK] DBeaver giai nen xong tai C:\DBeaver\" -ForegroundColor Green
+    }
+}
+AddShortcut "DBeaver" $dbeaverExe
+
+# ============================================================
+# [18] Effect House
+# ============================================================
+Write-Host ""
+Write-Host "=== [18] Effect House ===" -ForegroundColor Cyan
+$ehInstalled = CheckReg "Effect House"
+if ($ehInstalled) {
+    Write-Host "  [SKIP] Effect House da cai" -ForegroundColor Cyan
+} elseif (Get-Command winget -EA SilentlyContinue) {
+    Write-Host "  [.] Cai Effect House qua winget..." -ForegroundColor Yellow
+    winget install --id ByteDance.EffectHouse --silent --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -eq 0) { Write-Host "  [OK] Effect House cai xong" -ForegroundColor Green }
+    else {
+        Write-Host "  [WARN] winget that bai ($LASTEXITCODE), thu direct download..." -ForegroundColor Yellow
+        $f = "$tmp\EffectHouseSetup.exe"
+        if (Download "Effect House" "https://lf16-effecthouse.tiktokcdn.com/effecthouse/download/pc/EffectHouseSetup.exe" $f) {
+            RunInstaller "Effect House" $f "/S"
+        }
+    }
+} else {
+    $f = "$tmp\EffectHouseSetup.exe"
+    if (Download "Effect House" "https://lf16-effecthouse.tiktokcdn.com/effecthouse/download/pc/EffectHouseSetup.exe" $f) {
+        RunInstaller "Effect House" $f "/S"
+    }
+}
+
+# ============================================================
 # Mui gio + Sync time
 # ============================================================
 Write-Host ""
@@ -439,12 +620,16 @@ Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host " HOAN TAT - Ptiz VPS" -ForegroundColor Green
 Write-Host "  Prerequisites: VC++ | .NET 8 | WebView2" -ForegroundColor White
-Write-Host "  1. UniKey      5. Cursor" -ForegroundColor White
-Write-Host "  2. VipTalk     6. GitHub Desktop" -ForegroundColor White
-Write-Host "  3. Signal      7. Postman" -ForegroundColor White
-Write-Host "  4. VS Code     8. Android Studio" -ForegroundColor White
-Write-Host "  9. WSL2 + Docker Desktop" -ForegroundColor White
-Write-Host "  * Xcode: chi co tren macOS" -ForegroundColor Gray
+Write-Host "  1. UniKey        10. Chrome" -ForegroundColor White
+Write-Host "  2. VipTalk       11. Firefox" -ForegroundColor White
+Write-Host "  3. Signal        12. Arc" -ForegroundColor White
+Write-Host "  4. VS Code       13. Chocolatey" -ForegroundColor White
+Write-Host "  5. Cursor        14. Scoop" -ForegroundColor White
+Write-Host "  6. GitHub Desktop 15. Tabby (Terminus)" -ForegroundColor White
+Write-Host "  7. Postman       16. Figma" -ForegroundColor White
+Write-Host "  8. Android Studio 17. DBeaver" -ForegroundColor White
+Write-Host "  9. WSL2+Docker   18. Effect House" -ForegroundColor White
+Write-Host "  * Safari + Maccy: macOS only" -ForegroundColor Gray
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  [!] Neu Docker bao WSL not installed:" -ForegroundColor Yellow
