@@ -13,17 +13,18 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 function Download($name, $url, $out) {
-    $ProgressPreference = 'SilentlyContinue'
     Write-Host "  [.] Dang tai $name..." -ForegroundColor Yellow
     for ($i = 1; $i -le 3; $i++) {
         try {
             Remove-Item $out -EA SilentlyContinue
-            Invoke-WebRequest $url -OutFile $out -UseBasicParsing -EA Stop
+            $wc = New-Object System.Net.WebClient
+            $wc.DownloadFile($url, $out)
+            $wc.Dispose()
             if ((Test-Path $out) -and (Get-Item $out).Length -gt 100KB) {
                 Write-Host "  [OK] Tai xong ($([math]::Round((Get-Item $out).Length/1MB,1)) MB)" -ForegroundColor Green
                 return $true
             }
-            Write-Host "  [WARN] File trong, thu lai lan $i/3..." -ForegroundColor Yellow
+            Write-Host "  [WARN] File trong hoac loi, thu lai $i/3..." -ForegroundColor Yellow
         } catch {
             if ($i -lt 3) {
                 Write-Host "  [WARN] Lan $i that bai, thu lai: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -144,13 +145,7 @@ if (Test-Path $ghExe) {
     Write-Host "  [SKIP] GitHub Desktop da cai" -ForegroundColor Cyan
 } else {
     $f = "$tmp\GitHubDesktop.exe"
-    try {
-        $ghRelease = Invoke-RestMethod "https://api.github.com/repos/desktop/desktop/releases/latest" -UseBasicParsing -EA Stop
-        $ghUrl = ($ghRelease.assets | Where-Object { $_.name -like "*x64*.exe" } | Select-Object -First 1).browser_download_url
-        Write-Host "  [.] Tim thay URL: $ghUrl" -ForegroundColor Gray
-    } catch {
-        $ghUrl = "https://github.com/desktop/desktop/releases/latest/download/GitHubDesktopSetup-x64.exe"
-    }
+    $ghUrl = "https://github.com/desktop/desktop/releases/download/release-3.6.2/GitHubDesktopSetup-x64.exe"
     if (Download "GitHub Desktop" $ghUrl $f) {
         RunInstaller "GitHub Desktop" $f "--silent"
     } else {
