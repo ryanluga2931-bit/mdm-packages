@@ -14,8 +14,19 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 
 function Download($name, $url, $out) {
     Write-Host "  [.] Dang tai $name..." -ForegroundColor Yellow
-    Invoke-WebRequest $url -OutFile $out -UseBasicParsing
-    Write-Host "  [OK] Tai xong" -ForegroundColor Green
+    try {
+        Invoke-WebRequest $url -OutFile $out -UseBasicParsing -EA Stop
+        if ((Test-Path $out) -and (Get-Item $out).Length -gt 100KB) {
+            Write-Host "  [OK] Tai xong ($([math]::Round((Get-Item $out).Length/1MB,1)) MB)" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "  [FAIL] File tai xong bi loi hoac trong" -ForegroundColor Red
+            return $false
+        }
+    } catch {
+        Write-Host "  [FAIL] Tai that bai: $($_.Exception.Message)" -ForegroundColor Red
+        return $false
+    }
 }
 
 function RunInstaller($name, $path, $argList = "") {
@@ -126,8 +137,11 @@ if (Test-Path $ghExe) {
     Write-Host "  [SKIP] GitHub Desktop da cai" -ForegroundColor Cyan
 } else {
     $f = "$tmp\GitHubDesktop.exe"
-    Download "GitHub Desktop 3.6.2" "https://github.com/desktop/desktop/releases/download/release-3.6.2/GitHubDesktopSetup-x64.exe" $f
-    RunInstaller "GitHub Desktop" $f "--silent"
+    if (Download "GitHub Desktop" "https://central.github.com/deployments/desktop/desktopapp/latest/win32-x64" $f) {
+        RunInstaller "GitHub Desktop" $f "--silent"
+    } else {
+        Write-Host "  [SKIP] Bo qua GitHub Desktop (tai that bai)" -ForegroundColor Yellow
+    }
 }
 AddShortcut "GitHub Desktop" $ghExe
 
