@@ -137,7 +137,7 @@ if (Test-Path $ghExe) {
     Write-Host "  [SKIP] GitHub Desktop da cai" -ForegroundColor Cyan
 } else {
     $f = "$tmp\GitHubDesktop.exe"
-    if (Download "GitHub Desktop" "https://central.github.com/deployments/desktop/desktopapp/latest/win32-x64" $f) {
+    if (Download "GitHub Desktop" "https://github.com/desktop/desktop/releases/latest/download/GitHubDesktopSetup-x64.exe" $f) {
         RunInstaller "GitHub Desktop" $f "--silent"
     } else {
         Write-Host "  [SKIP] Bo qua GitHub Desktop (tai that bai)" -ForegroundColor Yellow
