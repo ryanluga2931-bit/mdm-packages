@@ -181,13 +181,150 @@ if (CheckReg "Docker Desktop") {
 
 
 # --- Mui gio + Sync time ---
-Write-Host "" 
+Write-Host ""
 Write-Host "=== Cai mui gio UTC+7 + Sync time ===" -ForegroundColor Cyan
 Set-TimeZone -Id "SE Asia Standard Time"
 Write-Host "  [OK] Mui gio: $(Get-TimeZone | Select-Object -ExpandProperty DisplayName)" -ForegroundColor Green
 Start-Service w32tm -EA SilentlyContinue
 w32tm /resync /force 2>&1 | Out-Null
 Write-Host "  [OK] Sync time: $(Get-Date)" -ForegroundColor Green
+
+# --- Kiem tra app ---
+Write-Host ""
+Write-Host "=== KIEM TRA APP (MO THU + CHECK HOAT DONG) ===" -ForegroundColor Magenta
+
+function LaunchCheck($name, $exePath, $argList = "") {
+    Write-Host ("  [{0,-20}] " -f $name) -ForegroundColor White -NoNewline
+    if (-not (Test-Path $exePath)) {
+        Write-Host "FAIL - Khong tim thay: $exePath" -ForegroundColor Red
+        return "FAIL"
+    }
+    try {
+        if ($argList) { $p = Start-Process $exePath -ArgumentList $argList -PassThru -EA Stop }
+        else          { $p = Start-Process $exePath -PassThru -EA Stop }
+        Start-Sleep -Seconds 4
+        if ($null -eq $p) {
+            Write-Host "FAIL - Khong khoi dong duoc" -ForegroundColor Red
+            return "FAIL"
+        }
+        $p.Refresh()
+        if (-not $p.HasExited) {
+            $p.Kill() | Out-Null
+            Write-Host "OK   - Chay binh thuong" -ForegroundColor Green
+            return "OK"
+        } elseif ($p.ExitCode -eq 0 -or $p.ExitCode -eq 1) {
+            Write-Host "OK   - Thoat nhanh (exit $($p.ExitCode))" -ForegroundColor Green
+            return "OK"
+        } else {
+            Write-Host "WARN - Thoat ngay, exit code: $($p.ExitCode) → co the thieu runtime" -ForegroundColor Yellow
+            return "WARN"
+        }
+    } catch {
+        Write-Host "FAIL - Loi: $($_.Exception.Message)" -ForegroundColor Red
+        return "FAIL"
+    }
+}
+
+$appResults = [ordered]@{}
+
+# UniKey
+$appResults["UniKey"] = LaunchCheck "UniKey" "C:\Program Files\UniKey\UniKey\UniKeyNT.exe"
+
+# VipTalk - tim exe trong registry hoac cac duong dan pho bien
+$vtReg = Get-ItemProperty `
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" `
+    -EA SilentlyContinue | Where-Object { $_.DisplayName -like "*VipTalk*" } | Select-Object -First 1
+$vtExePaths = @(
+    ($vtReg.InstallLocation -ne $null ? (Join-Path $vtReg.InstallLocation "VipTalk.exe") : $null),
+    "C:\Program Files\VipTalk\VipTalk.exe",
+    "C:\Program Files (x86)\VipTalk\VipTalk.exe",
+    "$env:LOCALAPPDATA\Programs\VipTalk\VipTalk.exe"
+) | Where-Object { $_ -ne $null }
+$vtExe = $vtExePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $vtExe) { $vtExe = "C:\Program Files\VipTalk\VipTalk.exe" }
+$appResults["VipTalk"] = LaunchCheck "VipTalk" $vtExe
+
+# Signal
+$appResults["Signal"] = LaunchCheck "Signal" "$env:LOCALAPPDATA\Programs\signal-desktop\Signal.exe"
+
+# VS Code
+$codeExe2 = if (Test-Path "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe") {
+    "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe"
+} else { "C:\Program Files\Microsoft VS Code\Code.exe" }
+$appResults["VS Code"] = LaunchCheck "VS Code" $codeExe2 "--version"
+
+# Cursor
+$cursorExe = @(
+    "$env:LOCALAPPDATA\Programs\cursor\Cursor.exe",
+    "$env:LOCALAPPDATA\Programs\Cursor\Cursor.exe",
+    "$env:APPDATA\Local\Programs\cursor\Cursor.exe"
+) | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $cursorExe) { $cursorExe = "$env:LOCALAPPDATA\Programs\cursor\Cursor.exe" }
+$appResults["Cursor"] = LaunchCheck "Cursor" $cursorExe
+
+# GitHub Desktop
+$appResults["GitHub Desktop"] = LaunchCheck "GitHub Desktop" "$env:LOCALAPPDATA\GitHubDesktop\GitHubDesktop.exe"
+
+# Postman
+$appResults["Postman"] = LaunchCheck "Postman" "$env:LOCALAPPDATA\Postman\Postman.exe"
+
+# Android Studio
+$asReg = Get-ItemProperty `
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" `
+    -EA SilentlyContinue | Where-Object { $_.DisplayName -like "*Android Studio*" } | Select-Object -First 1
+$asExe = if ($asReg -and $asReg.InstallLocation) {
+    Join-Path $asReg.InstallLocation "bin\studio64.exe"
+} else { "C:\Program Files\Android\Android Studio\bin\studio64.exe" }
+$appResults["Android Studio"] = LaunchCheck "Android Studio" $asExe
+
+# Docker Desktop - check exe + service (khong launch vi can WSL2 + restart)
+Write-Host ("  [{0,-20}] " -f "Docker Desktop") -ForegroundColor White -NoNewline
+$dockerExe = "$env:LOCALAPPDATA\Docker\Docker Desktop.exe"
+if (Test-Path $dockerExe) {
+    $dockerSvc = Get-Service "com.docker.service" -EA SilentlyContinue
+    if ($dockerSvc -and $dockerSvc.Status -eq "Running") {
+        Write-Host "OK   - Exe co + service dang chay" -ForegroundColor Green
+        $appResults["Docker Desktop"] = "OK"
+    } elseif ($dockerSvc) {
+        Write-Host "WARN - Exe co nhung service chua chay → Restart may de Docker hoat dong" -ForegroundColor Yellow
+        $appResults["Docker Desktop"] = "WARN"
+    } else {
+        Write-Host "WARN - Exe co nhung chua thay service → Restart may sau WSL2" -ForegroundColor Yellow
+        $appResults["Docker Desktop"] = "WARN"
+    }
+} else {
+    Write-Host "FAIL - Khong tim thay Docker Desktop exe" -ForegroundColor Red
+    $appResults["Docker Desktop"] = "FAIL"
+}
+
+# --- Bang tong ket ket qua ---
+Write-Host ""
+Write-Host "--- TONG KET KIEM TRA APP ---" -ForegroundColor Magenta
+$okList   = @()
+$warnList = @()
+$failList = @()
+foreach ($app in $appResults.Keys) {
+    switch ($appResults[$app]) {
+        "OK"   { $okList   += $app }
+        "WARN" { $warnList += $app }
+        "FAIL" { $failList += $app }
+    }
+}
+foreach ($app in $okList)   { Write-Host ("  [OK  ] {0}" -f $app) -ForegroundColor Green }
+foreach ($app in $warnList) { Write-Host ("  [WARN] {0}" -f $app) -ForegroundColor Yellow }
+foreach ($app in $failList) { Write-Host ("  [FAIL] {0}" -f $app) -ForegroundColor Red }
+
+if ($failList.Count -gt 0 -or $warnList.Count -gt 0) {
+    Write-Host ""
+    Write-Host "  [!] Cac app bi WARN/FAIL co the can:" -ForegroundColor Yellow
+    Write-Host "      - Visual C++ Redistributable: https://aka.ms/vs/17/release/vc_redist.x64.exe" -ForegroundColor Gray
+    Write-Host "      - .NET 8 Desktop Runtime: https://dotnet.microsoft.com/download/dotnet/8.0" -ForegroundColor Gray
+    Write-Host "      - WebView2 Runtime: https://developer.microsoft.com/en-us/microsoft-edge/webview2/" -ForegroundColor Gray
+    Write-Host "      - Docker: can RESTART may sau khi cai WSL2" -ForegroundColor Gray
+}
 
 # --- Ket qua ---
 Write-Host ""
