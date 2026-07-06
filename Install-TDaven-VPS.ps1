@@ -1,5 +1,6 @@
 # ============================================================
 # Cai app cho VPS T Daven
+# UniKey, VipTalk 1.12.143, Signal,
 # Cursor, VS Code, GitHub Desktop, Docker+WSL2,
 # Postman, Android Studio
 # (Xcode chi co tren macOS - khong co ban Windows)
@@ -55,9 +56,47 @@ function AddShortcut($name, $targetPath, $argList = "") {
     Write-Host "  [OK] Shortcut '$name' tao xong" -ForegroundColor Green
 }
 
-# --- [1] VS Code ---
+# --- [1] UniKey ---
 Write-Host ""
-Write-Host "=== [1/6] VS Code ===" -ForegroundColor Cyan
+Write-Host "=== [1/9] UniKey ===" -ForegroundColor Cyan
+$ukExe = "C:\Program Files\UniKey\UniKey\UniKeyNT.exe"
+if (Test-Path $ukExe) {
+    Write-Host "  [SKIP] UniKey da co" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\UniKey.zip"
+    Download "UniKey" "$ghBase/UniKey-Windows.zip" $f
+    Expand-Archive $f -DestinationPath "C:\Program Files\UniKey" -Force
+    Write-Host "  [OK] UniKey xong" -ForegroundColor Green
+}
+AddShortcut "UniKey" $ukExe
+
+# --- [2] VipTalk ---
+Write-Host ""
+Write-Host "=== [2/9] VipTalk ===" -ForegroundColor Cyan
+if (CheckReg "VipTalk") {
+    Write-Host "  [SKIP] VipTalk da cai" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\VipTalk.exe"
+    Download "VipTalk 1.12.143" "$ghBase/VipTalk-Setup-1.12.143.exe" $f
+    RunInstaller "VipTalk" $f "/S"
+}
+
+# --- [3] Signal ---
+Write-Host ""
+Write-Host "=== [3/9] Signal ===" -ForegroundColor Cyan
+$sigExe = "$env:LOCALAPPDATA\Programs\signal-desktop\Signal.exe"
+if (Test-Path $sigExe) {
+    Write-Host "  [SKIP] Signal da cai" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\Signal.exe"
+    Download "Signal 8.16.0" "$ghBase/Signal-8.16.0-x64.exe" $f
+    RunInstaller "Signal" $f "--silent"
+}
+AddShortcut "Signal" $sigExe
+
+# --- [4] VS Code ---
+Write-Host ""
+Write-Host "=== [4/9] VS Code ===" -ForegroundColor Cyan
 $codeExe = if (Test-Path "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe") { "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe" } else { "C:\Program Files\Microsoft VS Code\Code.exe" }
 if (Test-Path $codeExe) {
     Write-Host "  [SKIP] VS Code da cai" -ForegroundColor Cyan
@@ -70,7 +109,7 @@ AddShortcut "Visual Studio Code" $codeExe
 
 # --- [2] Cursor ---
 Write-Host ""
-Write-Host "=== [2/6] Cursor ===" -ForegroundColor Cyan
+Write-Host "=== [5/9] Cursor ===" -ForegroundColor Cyan
 if (CheckReg "Cursor") {
     Write-Host "  [SKIP] Cursor da cai" -ForegroundColor Cyan
 } else {
@@ -81,7 +120,7 @@ if (CheckReg "Cursor") {
 
 # --- [3] GitHub Desktop ---
 Write-Host ""
-Write-Host "=== [3/6] GitHub Desktop ===" -ForegroundColor Cyan
+Write-Host "=== [6/9] GitHub Desktop ===" -ForegroundColor Cyan
 $ghExe = "$env:LOCALAPPDATA\GitHubDesktop\GitHubDesktop.exe"
 if (Test-Path $ghExe) {
     Write-Host "  [SKIP] GitHub Desktop da cai" -ForegroundColor Cyan
@@ -94,7 +133,7 @@ AddShortcut "GitHub Desktop" $ghExe
 
 # --- [4] Postman ---
 Write-Host ""
-Write-Host "=== [4/6] Postman ===" -ForegroundColor Cyan
+Write-Host "=== [7/9] Postman ===" -ForegroundColor Cyan
 $postmanExe = "$env:LOCALAPPDATA\Postman\Postman.exe"
 if (Test-Path $postmanExe) {
     Write-Host "  [SKIP] Postman da cai" -ForegroundColor Cyan
@@ -107,7 +146,7 @@ AddShortcut "Postman" $postmanExe
 
 # --- [5] Android Studio ---
 Write-Host ""
-Write-Host "=== [5/6] Android Studio ===" -ForegroundColor Cyan
+Write-Host "=== [8/9] Android Studio ===" -ForegroundColor Cyan
 if (CheckReg "Android Studio") {
     Write-Host "  [SKIP] Android Studio da cai" -ForegroundColor Cyan
 } else {
@@ -118,7 +157,7 @@ if (CheckReg "Android Studio") {
 
 # --- [6] WSL2 + Docker Desktop ---
 Write-Host ""
-Write-Host "=== [6/6] WSL2 + Docker Desktop ===" -ForegroundColor Cyan
+Write-Host "=== [9/9] WSL2 + Docker Desktop ===" -ForegroundColor Cyan
 if (CheckReg "Docker Desktop") {
     Write-Host "  [SKIP] Docker Desktop da cai" -ForegroundColor Cyan
 } else {
@@ -154,12 +193,15 @@ Write-Host "  [OK] Sync time: $(Get-Date)" -ForegroundColor Green
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host " HOAN TAT - T Daven VPS" -ForegroundColor Green
-Write-Host "  1. VS Code" -ForegroundColor White
-Write-Host "  2. Cursor" -ForegroundColor White
-Write-Host "  3. GitHub Desktop" -ForegroundColor White
-Write-Host "  4. Postman" -ForegroundColor White
-Write-Host "  5. Android Studio" -ForegroundColor White
-Write-Host "  6. WSL2 + Docker Desktop" -ForegroundColor White
+Write-Host "  1. UniKey" -ForegroundColor White
+Write-Host "  2. VipTalk 1.12.143" -ForegroundColor White
+Write-Host "  3. Signal 8.16.0" -ForegroundColor White
+Write-Host "  4. VS Code" -ForegroundColor White
+Write-Host "  5. Cursor" -ForegroundColor White
+Write-Host "  6. GitHub Desktop" -ForegroundColor White
+Write-Host "  7. Postman" -ForegroundColor White
+Write-Host "  8. Android Studio" -ForegroundColor White
+Write-Host "  9. WSL2 + Docker Desktop" -ForegroundColor White
 Write-Host "  * Xcode: chi co tren macOS" -ForegroundColor Gray
 Write-Host "========================================" -ForegroundColor Cyan
 pause
