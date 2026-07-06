@@ -67,6 +67,16 @@ $da = "$tmp\DolphinAnty-Setup.exe"
 Download "Dolphin Anty" "$baseUrl/DolphinAnty-latest.exe" $da
 Run "Dolphin Anty" $da "--silent"
 
+
+# --- Mui gio + Sync time ---
+Write-Host "" 
+Write-Host "=== Cai mui gio UTC+7 + Sync time ===" -ForegroundColor Cyan
+Set-TimeZone -Id "SE Asia Standard Time"
+Write-Host "  [OK] Mui gio: $(Get-TimeZone | Select-Object -ExpandProperty DisplayName)" -ForegroundColor Green
+Start-Service w32tm -EA SilentlyContinue
+w32tm /resync /force 2>&1 | Out-Null
+Write-Host "  [OK] Sync time: $(Get-Date)" -ForegroundColor Green
+
 # --- Ket qua ---
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
