@@ -148,12 +148,22 @@ $ghExe = "$env:LOCALAPPDATA\GitHubDesktop\GitHubDesktop.exe"
 if (Test-Path $ghExe) {
     Write-Host "  [SKIP] GitHub Desktop da cai" -ForegroundColor Cyan
 } else {
-    $f = "$tmp\GitHubDesktop.exe"
-    $ghUrl = "https://github.com/desktop/desktop/releases/download/release-3.6.2/GitHubDesktopSetup-x64.exe"
-    if (Download "GitHub Desktop" $ghUrl $f) {
-        RunInstaller "GitHub Desktop" $f "--silent"
+    if (Get-Command winget -EA SilentlyContinue) {
+        Write-Host "  [.] Cai GitHub Desktop qua winget..." -ForegroundColor Yellow
+        winget install --id GitHub.GitHubDesktop --silent --accept-package-agreements --accept-source-agreements
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  [OK] GitHub Desktop cai xong" -ForegroundColor Green
+        } else {
+            Write-Host "  [WARN] winget exit: $LASTEXITCODE" -ForegroundColor Yellow
+        }
     } else {
-        Write-Host "  [SKIP] Bo qua GitHub Desktop (tai that bai)" -ForegroundColor Yellow
+        $f = "$tmp\GitHubDesktop.exe"
+        $ghUrl = "https://github.com/desktop/desktop/releases/download/release-3.6.3-beta1/GitHubDesktopSetup-x64.exe"
+        if (Download "GitHub Desktop" $ghUrl $f) {
+            RunInstaller "GitHub Desktop" $f "--silent"
+        } else {
+            Write-Host "  [SKIP] Bo qua GitHub Desktop (tai that bai + khong co winget)" -ForegroundColor Yellow
+        }
     }
 }
 AddShortcut "GitHub Desktop" $ghExe
