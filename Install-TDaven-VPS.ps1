@@ -13,20 +13,27 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 function Download($name, $url, $out) {
+    $ProgressPreference = 'SilentlyContinue'
     Write-Host "  [.] Dang tai $name..." -ForegroundColor Yellow
-    try {
-        Invoke-WebRequest $url -OutFile $out -UseBasicParsing -EA Stop
-        if ((Test-Path $out) -and (Get-Item $out).Length -gt 100KB) {
-            Write-Host "  [OK] Tai xong ($([math]::Round((Get-Item $out).Length/1MB,1)) MB)" -ForegroundColor Green
-            return $true
-        } else {
-            Write-Host "  [FAIL] File tai xong bi loi hoac trong" -ForegroundColor Red
-            return $false
+    for ($i = 1; $i -le 3; $i++) {
+        try {
+            Remove-Item $out -EA SilentlyContinue
+            Invoke-WebRequest $url -OutFile $out -UseBasicParsing -EA Stop
+            if ((Test-Path $out) -and (Get-Item $out).Length -gt 100KB) {
+                Write-Host "  [OK] Tai xong ($([math]::Round((Get-Item $out).Length/1MB,1)) MB)" -ForegroundColor Green
+                return $true
+            }
+            Write-Host "  [WARN] File trong, thu lai lan $i/3..." -ForegroundColor Yellow
+        } catch {
+            if ($i -lt 3) {
+                Write-Host "  [WARN] Lan $i that bai, thu lai: $($_.Exception.Message)" -ForegroundColor Yellow
+                Start-Sleep -Seconds 3
+            } else {
+                Write-Host "  [FAIL] Tai that bai sau 3 lan: $($_.Exception.Message)" -ForegroundColor Red
+            }
         }
-    } catch {
-        Write-Host "  [FAIL] Tai that bai: $($_.Exception.Message)" -ForegroundColor Red
-        return $false
     }
+    return $false
 }
 
 function RunInstaller($name, $path, $argList = "") {
