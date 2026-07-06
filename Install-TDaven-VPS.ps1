@@ -144,7 +144,14 @@ if (Test-Path $ghExe) {
     Write-Host "  [SKIP] GitHub Desktop da cai" -ForegroundColor Cyan
 } else {
     $f = "$tmp\GitHubDesktop.exe"
-    if (Download "GitHub Desktop" "https://github.com/desktop/desktop/releases/latest/download/GitHubDesktopSetup-x64.exe" $f) {
+    try {
+        $ghRelease = Invoke-RestMethod "https://api.github.com/repos/desktop/desktop/releases/latest" -UseBasicParsing -EA Stop
+        $ghUrl = ($ghRelease.assets | Where-Object { $_.name -like "*x64*.exe" } | Select-Object -First 1).browser_download_url
+        Write-Host "  [.] Tim thay URL: $ghUrl" -ForegroundColor Gray
+    } catch {
+        $ghUrl = "https://github.com/desktop/desktop/releases/latest/download/GitHubDesktopSetup-x64.exe"
+    }
+    if (Download "GitHub Desktop" $ghUrl $f) {
         RunInstaller "GitHub Desktop" $f "--silent"
     } else {
         Write-Host "  [SKIP] Bo qua GitHub Desktop (tai that bai)" -ForegroundColor Yellow
