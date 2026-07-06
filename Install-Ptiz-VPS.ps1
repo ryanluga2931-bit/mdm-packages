@@ -369,8 +369,18 @@ if (Test-Path $arcExe) {
     Write-Host "  [SKIP] Arc da cai" -ForegroundColor Cyan
 } else {
     $f = "$tmp\ArcSetup.exe"
-    if (Download "Arc Browser" "https://releases.arc.net/windows/Arc%20Installer.exe" $f) {
+    Write-Host "  [.] Dang tai Arc Browser..." -ForegroundColor Yellow
+    $curlExe = "$env:SystemRoot\System32\curl.exe"
+    if (Test-Path $curlExe) { & $curlExe -L -s -o $f "https://releases.arc.net/windows/Arc%20Installer.exe" }
+    else { $ProgressPreference='SilentlyContinue'; Invoke-WebRequest "https://releases.arc.net/windows/Arc%20Installer.exe" -OutFile $f -UseBasicParsing }
+    if ((Test-Path $f) -and (Get-Item $f).Length -gt 1KB) {
+        Write-Host "  [OK] Tai xong ($([math]::Round((Get-Item $f).Length/1MB,2)) MB)" -ForegroundColor Green
         RunInstaller "Arc" $f "--silent"
+    } else {
+        Write-Host "  [WARN] Arc: thu winget..." -ForegroundColor Yellow
+        winget install --id TheBrowserCompany.Arc --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) { Write-Host "  [OK] Arc cai xong qua winget" -ForegroundColor Green }
+        else { Write-Host "  [FAIL] Arc khong cai duoc" -ForegroundColor Red }
     }
 }
 
@@ -379,8 +389,8 @@ if (Test-Path $arcExe) {
 # ============================================================
 Write-Host ""
 Write-Host "=== [13] Chocolatey ===" -ForegroundColor Cyan
-if (Get-Command choco -EA SilentlyContinue) {
-    Write-Host "  [SKIP] Chocolatey da cai: $(choco --version)" -ForegroundColor Cyan
+if ((Test-Path "C:\ProgramData\chocolatey\bin\choco.exe") -or (Get-Command choco -EA SilentlyContinue)) {
+    Write-Host "  [SKIP] Chocolatey da cai" -ForegroundColor Cyan
 } else {
     Write-Host "  [.] Cai Chocolatey..." -ForegroundColor Yellow
     Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -398,16 +408,19 @@ if (Get-Command choco -EA SilentlyContinue) {
 # ============================================================
 Write-Host ""
 Write-Host "=== [14] Scoop ===" -ForegroundColor Cyan
-if (Get-Command scoop -EA SilentlyContinue) {
+$scoopExe = "$env:USERPROFILE\scoop\shims\scoop.ps1"
+if ((Test-Path $scoopExe) -or (Get-Command scoop -EA SilentlyContinue)) {
     Write-Host "  [SKIP] Scoop da cai" -ForegroundColor Cyan
 } else {
-    Write-Host "  [.] Cai Scoop..." -ForegroundColor Yellow
-    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-    Invoke-RestMethod get.scoop.sh | Invoke-Expression
-    if (Get-Command scoop -EA SilentlyContinue) {
+    Write-Host "  [.] Cai Scoop (admin mode)..." -ForegroundColor Yellow
+    $scoopScript = "$tmp\scoop-install.ps1"
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest "https://get.scoop.sh" -OutFile $scoopScript -UseBasicParsing
+    powershell -ExecutionPolicy Bypass -File $scoopScript -RunAsAdmin
+    if (Test-Path $scoopExe) {
         Write-Host "  [OK] Scoop cai xong" -ForegroundColor Green
     } else {
-        Write-Host "  [WARN] Scoop cai xong nhung can mo PowerShell moi de dung" -ForegroundColor Yellow
+        Write-Host "  [WARN] Scoop: can mo PowerShell moi de kiem tra" -ForegroundColor Yellow
     }
 }
 
