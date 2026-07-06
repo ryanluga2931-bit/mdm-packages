@@ -270,12 +270,6 @@ if (CheckReg "Android Studio") {
 Write-Host ""
 Write-Host "=== [9/9] WSL2 + Docker Desktop ===" -ForegroundColor Cyan
 
-# Kiem tra WSL da hoat dong chua
-$wslOk = $false
-try {
-    $wslStatus = wsl --status 2>&1
-    $wslOk = ($wslStatus -match "Default Version\s*:\s*2" -or (wsl --list 2>&1) -notmatch "not installed")
-} catch {}
 
 # Kiem tra Windows features da bat chua
 $wslFeature = dism /online /Get-FeatureInfo /featurename:Microsoft-Windows-Subsystem-Linux 2>&1 | Where-Object { $_ -match "State" }
@@ -501,6 +495,32 @@ if ($ehInstalled) {
     $f = "$tmp\EffectHouseSetup.exe"
     if (Download "Effect House" "https://lf16-effecthouse.tiktokcdn.com/effecthouse/download/pc/EffectHouseSetup.exe" $f) {
         RunInstaller "Effect House" $f "/S"
+    }
+}
+
+# ============================================================
+# [19] Ditto (clipboard manager)
+# ============================================================
+Write-Host ""
+Write-Host "=== [19] Ditto ===" -ForegroundColor Cyan
+$dittoInstalled = CheckReg "Ditto"
+if ($dittoInstalled) {
+    Write-Host "  [SKIP] Ditto da cai" -ForegroundColor Cyan
+} elseif (Get-Command winget -EA SilentlyContinue) {
+    Write-Host "  [.] Cai Ditto qua winget..." -ForegroundColor Yellow
+    winget install --id Ditto.Ditto --silent --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -eq 0) { Write-Host "  [OK] Ditto cai xong" -ForegroundColor Green }
+    else {
+        Write-Host "  [WARN] winget that bai, thu direct..." -ForegroundColor Yellow
+        $f = "$tmp\DittoSetup.exe"
+        if (Download "Ditto" "https://sourceforge.net/projects/ditto-cp/files/latest/download" $f) {
+            RunInstaller "Ditto" $f "/S"
+        }
+    }
+} else {
+    $f = "$tmp\DittoSetup.exe"
+    if (Download "Ditto" "https://sourceforge.net/projects/ditto-cp/files/latest/download" $f) {
+        RunInstaller "Ditto" $f "/S"
     }
 }
 
