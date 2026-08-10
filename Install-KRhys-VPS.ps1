@@ -117,7 +117,7 @@ if ((CheckReg "AdsPower") -or (Test-Path $adsExe)) {
     Write-Host "  [SKIP] AdsPower da cai" -ForegroundColor Cyan
 } else {
     $f = "$tmp\AdsPower-Setup.exe"
-    if (Download "AdsPower 8.7.23 (~330MB)" "https://version.adspower.net/software/win64-global/8.7.23/AdsPower-Global-8.7.23-x64.exe" $f) {
+    if (Download "AdsPower 8.7.23 (~330MB)" "$ghBase/AdsPower-Global-8.7.23-x64.exe" $f) {
         # AdsPower dung NSIS: /S silent, /D thu muc cai
         RunInstaller "AdsPower" $f "/S"
     }
@@ -134,8 +134,7 @@ if ((CheckReg "Claude") -or (Test-Path $claudeExe)) {
     Write-Host "  [SKIP] Claude Desktop da cai" -ForegroundColor Cyan
 } else {
     $f = "$tmp\Claude-Setup.exe"
-    $claudeUrl = "https://storage.googleapis.com/osprey-downloads-c02f6a0d-347c-492b-a752-3e0651722e97/nest-win-x64/Claude-Setup-x64.exe"
-    if (Download "Claude Desktop" $claudeUrl $f) {
+    if (Download "Claude Desktop" "$ghBase/Claude-Setup-x64.exe" $f) {
         # Claude dung Squirrel installer (Electron): --silent
         RunInstaller "Claude Desktop" $f "--silent"
     }
