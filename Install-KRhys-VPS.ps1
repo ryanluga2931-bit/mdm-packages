@@ -1,6 +1,6 @@
 # ============================================================
 # Cai app cho VPS K Rhys
-# UniKey, Signal, AdsPower, Claude Desktop
+# UniKey, Signal, AdsPower, Claude Desktop, ToolManager
 # ============================================================
 
 # Auto self-elevate neu chua phai admin
@@ -128,7 +128,7 @@ AddShortcut "AdsPower" $adsExe
 # [4] Claude Desktop
 # ============================================================
 Write-Host ""
-Write-Host "=== [4/4] Claude Desktop ===" -ForegroundColor Cyan
+Write-Host "=== [4/5] Claude Desktop ===" -ForegroundColor Cyan
 $claudeExe = "$env:LOCALAPPDATA\AnthropicClaude\claude.exe"
 if ((CheckReg "Claude") -or (Test-Path $claudeExe)) {
     Write-Host "  [SKIP] Claude Desktop da cai" -ForegroundColor Cyan
@@ -140,6 +140,24 @@ if ((CheckReg "Claude") -or (Test-Path $claudeExe)) {
     }
 }
 # Claude cai vao LocalAppData, shortcut tu tao boi installer
+
+# ============================================================
+# [5] ToolManager (portable Electron app)
+# ============================================================
+Write-Host ""
+Write-Host "=== [5/5] ToolManager v5.0.0 ===" -ForegroundColor Cyan
+$tmExe = "C:\ToolManager\toolmanager-win32-x64\toolmanager.exe"
+if (Test-Path $tmExe) {
+    Write-Host "  [SKIP] ToolManager da co" -ForegroundColor Cyan
+} else {
+    $f = "$tmp\ToolManager.zip"
+    if (Download "ToolManager v5.0.0 (~410MB)" "$ghBase/ToolManager-win32-x64-v5.0.0.zip" $f) {
+        Write-Host "  [.] Dang giai nen vao C:\ToolManager..." -ForegroundColor Yellow
+        Expand-Archive $f -DestinationPath "C:\ToolManager" -Force
+        Write-Host "  [OK] ToolManager xong" -ForegroundColor Green
+    }
+}
+AddShortcut "ToolManager" $tmExe
 
 # ============================================================
 # Mui gio + Sync time
@@ -162,6 +180,7 @@ Write-Host "  1. UniKey" -ForegroundColor White
 Write-Host "  2. Signal" -ForegroundColor White
 Write-Host "  3. AdsPower" -ForegroundColor White
 Write-Host "  4. Claude Desktop" -ForegroundColor White
+Write-Host "  5. ToolManager v5.0.0 (portable)" -ForegroundColor White
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 pause
