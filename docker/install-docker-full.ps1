@@ -1,33 +1,40 @@
 # ===== CAI LAI DOCKER DESKTOP FULL (tai tu GitHub) =====
-# Chay QUYEN ADMIN
+# Chay QUYEN ADMIN. Ghi log ra C:\docker-install-log.txt de doc lai.
 $ErrorActionPreference = "Continue"
+$LOG = "C:\docker-install-log.txt"
 $REL = "https://github.com/ryanluga2931-bit/mdm-packages/releases/download/docker-v1"
+function Log($m,$c="White"){ Write-Host $m -ForegroundColor $c; Add-Content $LOG "$(Get-Date -Format 'HH:mm:ss') $m" }
+Set-Content $LOG "=== Docker install log ==="
 
-Write-Host "1. Tat Docker dang chay..." -ForegroundColor Cyan
+Log "1. Tat Docker dang chay..." Cyan
 Get-Process "*docker*","com.docker*" -EA SilentlyContinue | Stop-Process -Force -EA SilentlyContinue
 
-Write-Host "2. Bat feature ao hoa..." -ForegroundColor Cyan
+Log "2. Bat feature ao hoa..." Cyan
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart | Out-Null
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart | Out-Null
 dism.exe /online /enable-feature /featurename:Microsoft-Hyper-V-All /all /norestart | Out-Null
 dism.exe /online /enable-feature /featurename:Containers /all /norestart | Out-Null
 dism.exe /online /enable-feature /featurename:HypervisorPlatform /all /norestart | Out-Null
 
-Write-Host "3. Bat hypervisor launch (QUAN TRONG)..." -ForegroundColor Cyan
+Log "3. Bat hypervisor launch (QUAN TRONG)..." Cyan
 bcdedit /set hypervisorlaunchtype auto | Out-Null
 
-Write-Host "4. Tai + cai WSL2 kernel tu GitHub..." -ForegroundColor Cyan
+Log "4. Tai + cai WSL2 kernel tu GitHub..." Cyan
 $wsl = "$env:TEMP\wsl_update_x64.msi"
-Invoke-WebRequest "$REL/wsl_update_x64.msi" -OutFile $wsl
-Start-Process msiexec.exe -ArgumentList "/i `"$wsl`" /quiet /norestart" -Wait
+try { Invoke-WebRequest "$REL/wsl_update_x64.msi" -OutFile $wsl -UseBasicParsing; Start-Process msiexec.exe -ArgumentList "/i `"$wsl`" /quiet /norestart" -Wait; Log "   WSL2 kernel: OK" Green }
+catch { Log "   WSL2 kernel LOI: $_" Red }
 
-Write-Host "5. Tai Docker Desktop tu GitHub (~650MB)..." -ForegroundColor Cyan
+Log "5. Tai Docker Desktop tu GitHub (~630MB)..." Cyan
 $dk = "$env:TEMP\DockerDesktopInstaller.exe"
-Invoke-WebRequest "$REL/DockerDesktopInstaller.exe" -OutFile $dk
+try { Invoke-WebRequest "$REL/DockerDesktopInstaller.exe" -OutFile $dk -UseBasicParsing; Log "   Tai xong: $((Get-Item $dk).Length/1MB -as [int])MB" Green }
+catch { Log "   Tai Docker LOI: $_" Red }
 
-Write-Host "6. Cai Docker Desktop (WSL2 backend)..." -ForegroundColor Cyan
-Start-Process $dk -ArgumentList "install","--quiet","--accept-license","--backend=wsl-2" -Wait
+Log "6. Cai Docker Desktop (WSL2 backend)..." Cyan
+$p = Start-Process $dk -ArgumentList "install","--quiet","--accept-license","--backend=wsl-2" -Wait -PassThru
+Log "   Installer exit code: $($p.ExitCode)  (0=OK)" $(if($p.ExitCode -eq 0){'Green'}else{'Red'})
 
-Write-Host "`nXONG! PHAI RESTART may roi mo Docker Desktop." -ForegroundColor Green
-Write-Host "May se tu restart sau 15 giay..." -ForegroundColor Yellow
-shutdown /r /t 15 /c "Restart de hoan tat cai Docker"
+Log "`n===== XONG =====" Cyan
+Log "Log luu tai: $LOG" Yellow
+Log "PHAI RESTART MAY roi mo Docker Desktop." Yellow
+Write-Host "`n>>> KHONG tu restart. Doc ket qua o tren + file $LOG" -ForegroundColor Magenta
+Write-Host ">>> Khi nao san sang, RESTART TAY: shutdown /r /t 5" -ForegroundColor Magenta
