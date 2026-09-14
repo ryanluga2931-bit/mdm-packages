@@ -89,6 +89,17 @@ foreach ($p in ($targets | Select-Object -Unique)) {
 }
 
 # ============================================================
+# [2b] Tao lai folder he thong RONG cho user hien tai
+#      (tranh loi "Location unavailable" khi xoa han Desktop/Downloads...)
+# ============================================================
+Write-Host ""
+Write-Host "=== Tao lai folder chuan (rong) cho $currentUser ===" -ForegroundColor Cyan
+foreach ($d in @("Desktop","Downloads","Documents","Pictures","Videos","Music")) {
+    New-Item -ItemType Directory -Force "C:\Users\$currentUser\$d" | Out-Null
+}
+Write-Host "  [OK] Da tao lai Desktop/Downloads/Documents/Pictures/Videos/Music" -ForegroundColor Green
+
+# ============================================================
 # [3] Rac he thong
 # ============================================================
 Write-Host ""
